@@ -32,11 +32,15 @@ export class RtcRoom {
     state: PeerConnectionState;
     monitor: StatsMonitor;
     videoSender?: RTCRtpSender;
+    pendingCandidates?: RTCIceCandidate[];
   }> = new Map();
+
+  // 暂存对端 PeerConnection 建立前提前到达的 ICE Candidates
+  private earlyIceCandidates: Map<string, RTCIceCandidateInit[]> = new Map();
 
   private callbacks: RtcRoomCallbacks;
   private degradationPreference: DegradationPreferenceType = 'maintain-framerate';
-  private simulcastEnabled: boolean = true;
+  public simulcastEnabled: boolean = true;
   private simulcastLayers: SimulcastLayerConfig[] = [
     { rid: 'f', active: true, maxBitrate: 1500000, maxFramerate: 30 },
     { rid: 'h', active: true, maxBitrate: 500000, scaleResolutionDownBy: 2.0 },
@@ -152,6 +156,14 @@ export class RtcRoom {
         peerObj.state.remoteSdp = this.parseSdp(msg.sdp.sdp);
         await pc.setRemoteDescription(new RTCSessionDescription(msg.sdp));
 
+        // 如果在此之前收到了 ICE Candidate，现在将其加入
+        if (peerObj.pendingCandidates && peerObj.pendingCandidates.length > 0) {
+          for (const cand of peerObj.pendingCandidates) {
+            await pc.addIceCandidate(cand).catch(e => console.warn('addIceCandidate error:', e));
+          }
+          peerObj.pendingCandidates = [];
+        }
+
         // 生成并回复 Answer
         const answer = await pc.createAnswer();
         await pc.setLocalDescription(answer);
@@ -172,6 +184,14 @@ export class RtcRoom {
         if (peerObj) {
           peerObj.state.remoteSdp = this.parseSdp(msg.sdp.sdp);
           await peerObj.pc.setRemoteDescription(new RTCSessionDescription(msg.sdp));
+
+          if (peerObj.pendingCandidates && peerObj.pendingCandidates.length > 0) {
+            for (const cand of peerObj.pendingCandidates) {
+              await peerObj.pc.addIceCandidate(cand).catch(e => console.warn('addIceCandidate error:', e));
+            }
+            peerObj.pendingCandidates = [];
+          }
+
           this.notifyPeersChange();
         }
         break;
@@ -179,13 +199,28 @@ export class RtcRoom {
 
       case 'ice-candidate': {
         const peerObj = this.peers.get(msg.senderPeerId);
-        if (peerObj && msg.candidate) {
-          const cand = new RTCIceCandidate(msg.candidate);
-          await peerObj.pc.addIceCandidate(cand);
-          const parsed = this.parseCandidate(msg.candidate.candidate, true);
-          if (parsed) {
-            peerObj.state.remoteCandidates.push(parsed);
-            this.notifyPeersChange();
+        if (msg.candidate) {
+          if (peerObj) {
+            const cand = new RTCIceCandidate(msg.candidate);
+            
+            if (peerObj.pc.remoteDescription && peerObj.pc.remoteDescription.type) {
+              await peerObj.pc.addIceCandidate(cand).catch(e => console.warn('addIceCandidate error:', e));
+            } else {
+              if (!peerObj.pendingCandidates) peerObj.pendingCandidates = [];
+              peerObj.pendingCandidates.push(cand);
+            }
+
+            const parsed = this.parseCandidate(msg.candidate.candidate, true);
+            if (parsed) {
+              peerObj.state.remoteCandidates.push(parsed);
+              this.notifyPeersChange();
+            }
+          } else {
+            // 对端尚未创建 PeerConnection，暂存 Candidate 防止丢包
+            if (!this.earlyIceCandidates.has(msg.senderPeerId)) {
+              this.earlyIceCandidates.set(msg.senderPeerId, []);
+            }
+            this.earlyIceCandidates.get(msg.senderPeerId)!.push(msg.candidate);
           }
         }
         break;
@@ -251,21 +286,8 @@ export class RtcRoom {
       }
 
       if (videoTrack) {
-        if (this.simulcastEnabled && !this.isScreenSharing) {
-          // 开启 Simulcast 3 层分层编码
-          const transceiver = pc.addTransceiver(videoTrack, {
-            direction: 'sendrecv',
-            streams: [activeStream],
-            sendEncodings: [
-              { rid: 'f', maxBitrate: 1500000, maxFramerate: 30 },
-              { rid: 'h', maxBitrate: 500000, scaleResolutionDownBy: 2.0 },
-              { rid: 'q', maxBitrate: 150000, scaleResolutionDownBy: 4.0 }
-            ]
-          });
-          videoSender = transceiver.sender;
-        } else {
-          videoSender = pc.addTrack(videoTrack, activeStream);
-        }
+        // 在标准 P2P 模式下使用标准的 addTrack，保证双向视频流 100% 顺畅建立
+        videoSender = pc.addTrack(videoTrack, activeStream);
 
         // 应用当前的降级偏好 (degradationPreference)
         if (videoSender) {
@@ -274,12 +296,20 @@ export class RtcRoom {
       }
     }
 
-    // 监听对端媒体轨道
+    // 监听对端媒体轨道 (健壮的多轨道汇聚与流更新)
     pc.ontrack = (evt) => {
-      console.log(`[WebRTC] 收到来自 ${remotePeerId} 的媒体轨道:`, evt.track.kind);
+      console.log(`[WebRTC] 收到来自 ${remotePeerId} 的媒体轨道:`, evt.track.kind, evt.track.id);
       const peer = this.peers.get(remotePeerId);
       if (peer) {
-        peer.state.stream = evt.streams[0] || new MediaStream([evt.track]);
+        let stream = peer.state.stream;
+        if (!stream) {
+          stream = evt.streams && evt.streams[0] ? evt.streams[0] : new MediaStream();
+        }
+        if (!stream.getTracks().some(t => t.id === evt.track.id)) {
+          stream.addTrack(evt.track);
+        }
+        // 生成新的 MediaStream 实例浅拷贝，触发 React state 浅比较感知并重新渲染画面
+        peer.state.stream = new MediaStream(stream.getTracks());
         this.notifyPeersChange();
       }
     };
@@ -311,7 +341,22 @@ export class RtcRoom {
       this.notifyPeersChange();
     };
 
-    const peerEntry = { pc, state, monitor, videoSender };
+    const peerEntry = { pc, state, monitor, videoSender, pendingCandidates: [] as RTCIceCandidate[] };
+
+    // 检查并消费在此之前提前到达的 earlyIceCandidates
+    const early = this.earlyIceCandidates.get(remotePeerId);
+    if (early && early.length > 0) {
+      for (const candInit of early) {
+        const cand = new RTCIceCandidate(candInit);
+        peerEntry.pendingCandidates.push(cand);
+        const parsed = this.parseCandidate(candInit.candidate || '', true);
+        if (parsed) {
+          state.remoteCandidates.push(parsed);
+        }
+      }
+      this.earlyIceCandidates.delete(remotePeerId);
+    }
+
     this.peers.set(remotePeerId, peerEntry);
     monitor.start(1000);
 

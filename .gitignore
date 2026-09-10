@@ -18,6 +18,11 @@ dist-ssr
 !.vscode/extensions.json
 .idea
 .DS_Store
+.AppleDouble
+.LSOverride
+Thumbs.db
+ehthumbs.db
+Desktop.ini
 *.suo
 *.ntvs*
 *.njsproj
@@ -29,10 +34,21 @@ dist-ssr
 .env.*
 !.env.example
 
+# Sensitive files / Secrets
+.npmrc
+*.pem
+*.key
+*.crt
+
 # TypeScript & Vite cache
 *.tsbuildinfo
 .vite/
+.eslintcache
 
-# Server build output
+# Coverage
+coverage/
+.nyc_output/
+
+# Server and Client build output
 server/dist/
 client/dist/

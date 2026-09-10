@@ -28,6 +28,7 @@ export const App: React.FC = () => {
   const [selectedPeerId, setSelectedPeerId] = useState<string>('');
   const [preference, setPreference] = useState<DegradationPreferenceType>('maintain-framerate');
   const [keyframeLogs, setKeyframeLogs] = useState<Array<{ from: string; reason: string; timestamp: number }>>([]);
+  const [isMirrored, setIsMirrored] = useState(false); // 默认不镜像，单机测试时本地与远端方向完全一致
 
   const rtcRoomRef = useRef<RtcRoom | null>(null);
 
@@ -234,6 +235,7 @@ export const App: React.FC = () => {
                   stream={screenStream}
                   name={`${userName} (正在进行桌面屏幕共享 - maintain-resolution)`}
                   isLocal={true}
+                  isScreenShare={true}
                 />
               </div>
               <div className="h-44 flex space-x-3 overflow-x-auto pb-1">
@@ -244,6 +246,8 @@ export const App: React.FC = () => {
                     isLocal={true}
                     isAudioMuted={isAudioMuted}
                     isVideoMuted={isVideoMuted}
+                    mirrored={isMirrored}
+                    onToggleMirror={() => setIsMirrored(v => !v)}
                   />
                 </div>
                 {peerList.map(peer => (
@@ -268,6 +272,8 @@ export const App: React.FC = () => {
                 isLocal={true}
                 isAudioMuted={isAudioMuted}
                 isVideoMuted={isVideoMuted}
+                mirrored={isMirrored}
+                onToggleMirror={() => setIsMirrored(v => !v)}
               />
 
               {/* 远端参会者画面 */}
