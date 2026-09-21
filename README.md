@@ -1,16 +1,16 @@
-# WebRTC 多人视频会议教学与实战 Demo
+# WebRTC 多人视频会议 Demo
 
 <p align="left">
   <b>简体中文</b> | <a href="./README_EN.md">English</a>
 </p>
 
-> 📖 **官方配套技术博客**：  
+> 📖 **配套技术博客**：  
 > [**Core WebRTC Mechanisms and Practical Video Conferencing Analysis \| Wu Yongwei's Blog**](https://wywwwwei.github.io/2026/09/01/webrtc-intro/)  
 > *(本仓库内附完整本地备份：[中文版 webrtc.md](./webrtc.md) | [英文版 webrtc_en.md](./webrtc_en.md))*
 
 ---
 
-本项目是深度技术解析博客 [**《Core WebRTC Mechanisms and Practical Video Conferencing Analysis》**](https://wywwwwei.github.io/2026/09/01/webrtc-intro/) 的官方配套工程与交互式实验环境。
+本项目是技术解析博客 [**《Core WebRTC Mechanisms and Practical Video Conferencing Analysis》**](https://wywwwwei.github.io/2026/09/01/webrtc-intro/) 的配套工程与交互式实验环境。
 
 不同于普通的“两点视频通话”教程，本项目定位于 **“透视型（Observability-First）多人视频会议系统”**：在实现多人音视频互通与屏幕共享的同时，将 WebRTC 底层的 **信令控制面与 SDP 协商**、**ICE 打洞候选池（Host 与 STUN 反射型）**、**RTCP QoS 指标监控**、**Simulcast 多码流分层推流**、**降级偏好动态控制** 与 **关键帧快速恢复（PLI/FIR）** 等核心机制完整呈现在前端可视化面板中，做到“看得见、摸得着、可交互实验”。
 
@@ -18,7 +18,7 @@
 
 ## 对应博客核心知识点与工程映射
 
-Demo 中的每一个可视化抽屉与控制面板，均与[官方博客](https://wywwwwei.github.io/2026/09/01/webrtc-intro/)中的架构原理严格一一对应：
+Demo 中的每一个可视化抽屉与控制面板，均与博客 [《Core WebRTC Mechanisms and Practical Video Conferencing Analysis》](https://wywwwwei.github.io/2026/09/01/webrtc-intro/) 中的架构原理严格一一对应：
 
 | 博客章节 | 核心机制原理 | Demo 落地位置与可视化交互 |
 | :--- | :--- | :--- |

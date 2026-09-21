@@ -1,16 +1,16 @@
-# WebRTC Multi-Party Video Conferencing Demo & Lab
+# WebRTC Multi-Party Video Conferencing Demo
 
 <p align="left">
   <a href="./README.md">简体中文</a> | <b>English</b>
 </p>
 
-> 📖 **Official Companion Technical Blog**:  
+> 📖 **Companion Technical Blog**:  
 > [**Core WebRTC Mechanisms and Practical Video Conferencing Analysis \| Wu Yongwei's Blog**](https://wywwwwei.github.io/2026/09/01/webrtc-intro/)  
 > *(Local copy available in this repository: [webrtc_en.md](./webrtc_en.md) | [webrtc.md](./webrtc.md))*
 
 ---
 
-This repository is the official companion project and interactive lab for the technical article [**"Core WebRTC Mechanisms and Practical Video Conferencing Analysis"**](https://wywwwwei.github.io/2026/09/01/webrtc-intro/).
+This repository is the companion project and interactive lab for the technical article [**"Core WebRTC Mechanisms and Practical Video Conferencing Analysis"**](https://wywwwwei.github.io/2026/09/01/webrtc-intro/).
 
 Unlike trivial "two-peer chat" tutorials, this project is built as an **Observability-First Multi-Party Video Conferencing System**. While delivering real-time multi-party audio, video, and screen sharing, it exposes critical WebRTC internals directly into interactive visual panels: **Signaling & SDP Negotiation**, **ICE Candidate Pools (Host vs. STUN Reflexive)**, **RTCP QoS Telemetry**, **Simulcast Multi-Stream Encoding**, **Dynamic Degradation Preferences**, and **Keyframe Recovery (PLI/FIR)**.
 
@@ -18,7 +18,7 @@ Unlike trivial "two-peer chat" tutorials, this project is built as an **Observab
 
 ## Core Blog Topics & Engineering Mapping
 
-Every visual inspection drawer and control panel in this demo corresponds directly to the architectural concepts analyzed in the [official blog post](https://wywwwwei.github.io/2026/09/01/webrtc-intro/):
+Every visual inspection drawer and control panel in this demo corresponds directly to the architectural concepts analyzed in the technical blog [**"Core WebRTC Mechanisms and Practical Video Conferencing Analysis"**](https://wywwwwei.github.io/2026/09/01/webrtc-intro/):
 
 | Blog Chapter | Core Architectural Mechanism | Demo Implementation & Interactive Feature |
 | :--- | :--- | :--- |
